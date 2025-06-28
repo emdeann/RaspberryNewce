@@ -26,21 +26,21 @@ public class ServerListenerThread implements Runnable {
             try {
                 Socket newConnection = serverSocket.accept();
                 if (!running) return;
-                plugin.handleConnection(new RemoteSession(plugin, newConnection));
-                plugin.getLogger().info("Connection!");
-            } catch (Exception e) {
+
+                plugin.handleConnection(new RemoteSession(plugin, newConnection, 9000));
+            } catch (IOException e) {
                 // if the server thread is still running raise an error
                 if (running) {
                     plugin.getLogger().warning("Error creating new connection");
-                    e.printStackTrace();
+                    plugin.getLogger().info(e.getMessage());
                 }
             }
         }
         try {
             serverSocket.close();
-        } catch (Exception e) {
+        } catch (IOException e) {
             plugin.getLogger().warning("Error closing server socket");
-            e.printStackTrace();
+            plugin.getLogger().info(e.getMessage());
         }
     }
 }

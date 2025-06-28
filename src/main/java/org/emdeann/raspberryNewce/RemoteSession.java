@@ -1,5 +1,6 @@
 package org.emdeann.raspberryNewce;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -11,6 +12,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayDeque;
 
 public class RemoteSession extends BukkitRunnable {
@@ -31,21 +33,20 @@ public class RemoteSession extends BukkitRunnable {
 
     private final ArrayDeque<ServerCommand> inQueue = new ArrayDeque<>();
 
-    private final ArrayDeque<String> outQueue = new ArrayDeque<String>();
+    private final ArrayDeque<String> outQueue = new ArrayDeque<>();
 
     public boolean running = true;
 
     public boolean pendingRemoval = false;
 
 
-    private int maxCommandsPerTick = 9000;
-
-    private boolean closed = false;
+    private final int maxCommandsPerTick;
 
 
-    public RemoteSession(RaspberryNewcePlugin plugin, Socket socket) throws IOException {
+    public RemoteSession(RaspberryNewcePlugin plugin, Socket socket, int maxCommandsPerTick) throws IOException {
         this.socket = socket;
         this.plugin = plugin;
+        this.maxCommandsPerTick = maxCommandsPerTick;
         init();
     }
 
@@ -53,8 +54,8 @@ public class RemoteSession extends BukkitRunnable {
         socket.setTcpNoDelay(true);
         socket.setKeepAlive(true);
         socket.setTrafficClass(0x10);
-        this.in = new BufferedReader(new InputStreamReader(socket.getInputStream(), "UTF-8"));
-        this.out = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream(), "UTF-8"));
+        this.in = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
+        this.out = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8));
         this.jsonMapper = new ObjectMapper();
         startThreads();
         plugin.getLogger().info("Opened connection to" + socket.getRemoteSocketAddress() + ".");
@@ -97,7 +98,6 @@ public class RemoteSession extends BukkitRunnable {
     }
 
     public void close() {
-        if (closed) return;
         running = false;
         pendingRemoval = true;
 
@@ -108,13 +108,14 @@ public class RemoteSession extends BukkitRunnable {
         }
         catch (InterruptedException e) {
             plugin.getLogger().warning("Failed to stop in/out thread");
-            e.printStackTrace();
+            plugin.getLogger().info(e.getMessage());
         }
 
         try {
             socket.close();
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (IOException e) {
+            plugin.getLogger().warning("Error while closing socket thread");
+            plugin.getLogger().info(e.getMessage());
         }
         plugin.getLogger().info("Closed connection to" + socket.getRemoteSocketAddress() + ".");
     }
@@ -123,7 +124,9 @@ public class RemoteSession extends BukkitRunnable {
         try {
             out.write(reason);
             out.flush();
-        } catch (Exception e) {
+        } catch (IOException e) {
+            plugin.getLogger().warning("Error while kicking for " + reason);
+            plugin.getLogger().info(e.getMessage());
         }
         close();
     }
@@ -141,14 +144,13 @@ public class RemoteSession extends BukkitRunnable {
                     }
                     ServerCommand command = jsonMapper.readValue(root.binaryValue(), ServerCommand.class);
                     inQueue.add(command);
-                } catch (Exception e) {
+                } catch (JsonProcessingException e) {
+                    plugin.getLogger().warning("A malformed message was sent to the server");
+                } catch (IOException e) {
                     // if its running raise an error
                     if (running) {
-                        if (e.getMessage().equals("Connection reset")) {
-                            plugin.getLogger().info("Connection reset");
-                        } else {
-                            e.printStackTrace();
-                        }
+                        plugin.getLogger().warning("Error while reading input stream");
+                        plugin.getLogger().info(e.getMessage());
                         running = false;
                     }
                 }
@@ -156,9 +158,9 @@ public class RemoteSession extends BukkitRunnable {
             //close in buffer
             try {
                 in.close();
-            } catch (Exception e) {
+            } catch (IOException e) {
                 plugin.getLogger().warning("Failed to close in buffer");
-                e.printStackTrace();
+                plugin.getLogger().info(e.getMessage());
             }
         }
     }
@@ -176,10 +178,11 @@ public class RemoteSession extends BukkitRunnable {
                     out.flush();
                     Thread.yield();
                     Thread.sleep(1L);
-                } catch (Exception e) {
+                } catch (IOException | InterruptedException e) {
                     // if its running raise an error
                     if (running) {
-                        e.printStackTrace();
+                        plugin.getLogger().warning("Error while sending output");
+                        plugin.getLogger().info(e.getMessage());
                         running = false;
                     }
                 }
@@ -187,9 +190,9 @@ public class RemoteSession extends BukkitRunnable {
             //close out buffer
             try {
                 out.close();
-            } catch (Exception e) {
+            } catch (IOException e) {
                 plugin.getLogger().warning("Failed to close out buffer");
-                e.printStackTrace();
+                plugin.getLogger().info(e.getMessage());
             }
         }
     }
