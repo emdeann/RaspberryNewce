@@ -1,7 +1,6 @@
 package org.emdeann.raspberryNewce;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.MappingIterator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -62,7 +61,7 @@ public class RemoteSession extends BukkitRunnable {
     @Override
     public void run() {
         if (pendingRemoval) {
-            this.cancel();
+            this.close();
             return;
         }
         int processedCount = 0;
@@ -113,6 +112,7 @@ public class RemoteSession extends BukkitRunnable {
             plugin.getLogger().info(e.getMessage());
         }
         plugin.getLogger().info("Closed connection to" + socket.getRemoteSocketAddress() + ".");
+        this.cancel();
     }
 
     public void kick(String reason) {
