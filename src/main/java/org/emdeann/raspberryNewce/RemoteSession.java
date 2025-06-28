@@ -2,6 +2,7 @@ package org.emdeann.raspberryNewce;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.MappingIterator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.emdeann.raspberryNewce.Commands.ServerCommand;
@@ -97,9 +98,10 @@ public class RemoteSession extends BukkitRunnable {
             if (!outputPool.awaitTermination(2, TimeUnit.SECONDS)) {
                 throw new InterruptedException("Output pool failed to close in time");
             }
+            in.close();
             inThread.join(500);
         }
-        catch (InterruptedException e) {
+        catch (InterruptedException | IOException e) {
             plugin.getLogger().warning("Failed to stop in/out thread");
             plugin.getLogger().info(e.getMessage());
         }
@@ -130,13 +132,12 @@ public class RemoteSession extends BukkitRunnable {
             plugin.getLogger().info("Starting input thread");
             while (running) {
                 try {
-                    JsonNode root = jsonMapper.readTree(in);
-                    if (root == null || root.isNull()) {
+                    MappingIterator<ServerCommand> generator = jsonMapper.readerFor(ServerCommand.class).readValues(in);
+                    if (!generator.hasNextValue()) {
                         running = false;
                         break;
                     }
-                    plugin.getLogger().info(root.toString());
-                    ServerCommand command = jsonMapper.treeToValue(root, ServerCommand.class);
+                    ServerCommand command = generator.nextValue();
                     plugin.getLogger().info(command.domain);
                     inQueue.add(command);
                 } catch (JsonProcessingException | IllegalArgumentException e) {
@@ -147,13 +148,6 @@ public class RemoteSession extends BukkitRunnable {
                         running = false;
                     }
                 }
-            }
-            //close in buffer
-            try {
-                in.close();
-            } catch (IOException e) {
-                plugin.getLogger().warning("Failed to close in buffer");
-                plugin.getLogger().info(e.getMessage());
             }
         }
     }
@@ -173,11 +167,9 @@ public class RemoteSession extends BukkitRunnable {
                 out.write('\n');
                 out.flush();
             } catch (IOException e) {
-                if (running) {
-                    plugin.getLogger().warning("Error while sending output");
-                    plugin.getLogger().info(e.getMessage());
-                    running = false;
-                }
+                plugin.getLogger().warning("Error while sending output");
+                plugin.getLogger().info(e.getMessage());
+                running = false;
             }
         }
     }
