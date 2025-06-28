@@ -19,13 +19,17 @@ public class WorldCommandProcessor extends CommandProcessor {
 
     @GameCommand
     public void setBlock(List<String> params) {
-        if (!verifyParametersAre(params, CommandParameterTypes.INTEGER, CommandParameterTypes.INTEGER, CommandParameterTypes.INTEGER)) {
+        if (!verifyParametersAre(params,
+                CommandParameterTypes.INTEGER,
+                CommandParameterTypes.INTEGER,
+                CommandParameterTypes.INTEGER,
+                CommandParameterTypes.MATERIAL)) {
             return;
         }
-        setBlock(Integer.parseInt(params.get(0)), Integer.parseInt(params.get(1)), Integer.parseInt(params.get(2)));
+        setBlock(Integer.parseInt(params.get(0)), Integer.parseInt(params.get(1)), Integer.parseInt(params.get(2)), Material.valueOf(params.get(3).toUpperCase()));
     }
 
-    private void setBlock(int x, int y, int z) {
-        world.getBlockAt(x, y, z).setType(Material.DIAMOND_BLOCK);
+    private void setBlock(int x, int y, int z, Material material) {
+        world.getBlockAt(x, y, z).setType(material);
     }
 }

@@ -1,5 +1,6 @@
 package org.emdeann.raspberryNewce.Commands.Processors;
 
+import org.bukkit.Material;
 import org.emdeann.raspberryNewce.Commands.CommandParameterTypes;
 import org.emdeann.raspberryNewce.Commands.GameCommand;
 import org.emdeann.raspberryNewce.Commands.ServerCommand;
@@ -42,6 +43,7 @@ public class CommandProcessor {
                 switch (types[i]) {
                     case INTEGER -> Integer.parseInt(params.get(i));
                     case DOUBLE -> Double.parseDouble(params.get(i));
+                    case MATERIAL -> Material.valueOf(params.get(i).toUpperCase());
                     case BOOLEAN -> {
                         if (!params.get(i).equalsIgnoreCase("true") && !params.get(i).equalsIgnoreCase("false"))
                             return false;

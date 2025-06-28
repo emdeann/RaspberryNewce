@@ -132,13 +132,11 @@ public class RemoteSession extends BukkitRunnable {
             while (running) {
                 try {
                     MappingIterator<ServerCommand> generator = jsonMapper.readerFor(ServerCommand.class).readValues(in);
-                    if (!generator.hasNextValue()) {
-                        running = false;
-                        break;
+                    while (generator.hasNextValue()) {
+                        ServerCommand command = generator.nextValue();
+                        plugin.getLogger().info(command.domain);
+                        inQueue.add(command);
                     }
-                    ServerCommand command = generator.nextValue();
-                    plugin.getLogger().info(command.domain);
-                    inQueue.add(command);
                 } catch (JsonProcessingException | IllegalArgumentException e) {
                     plugin.getLogger().warning("A malformed message was sent to the server");
                 } catch (IOException e) {
