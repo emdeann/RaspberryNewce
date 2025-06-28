@@ -67,8 +67,7 @@ public class RemoteSession extends BukkitRunnable {
         int processedCount = 0;
         ServerCommand command;
         while ((command = inQueue.poll()) != null) {
-            send(command.domain);
-            send(command.command);
+            plugin.handleCommand(command);
             processedCount++;
             if (processedCount >= maxCommandsPerTick) {
                 plugin.getLogger().warning("Over " + maxCommandsPerTick +
