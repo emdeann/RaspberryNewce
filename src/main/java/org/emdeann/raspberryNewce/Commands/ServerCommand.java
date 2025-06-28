@@ -6,11 +6,11 @@ import java.util.List;
 
 public class ServerCommand {
     @JsonProperty("domain")
-    private String domain;
+    public String domain;
 
     @JsonProperty("command")
-    private String command;
+    public String command;
 
     @JsonProperty("args")
-    private List<String> args;
+    public List<String> args;
 }
