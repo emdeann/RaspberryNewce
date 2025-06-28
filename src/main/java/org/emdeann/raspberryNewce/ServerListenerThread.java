@@ -1,43 +1,46 @@
 package org.emdeann.raspberryNewce;
 
-import java.io.*;
-import java.net.*;
+import org.bukkit.scheduler.BukkitRunnable;
 
-public class ServerListenerThread implements Runnable {
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.SocketException;
 
-    public ServerSocket serverSocket;
+public class ServerListenerThread extends BukkitRunnable {
 
-    public SocketAddress bindAddress;
-
-    public boolean running = true;
-
+    private final ServerSocket serverSocket;
     private final RaspberryNewcePlugin plugin;
 
-    public ServerListenerThread(RaspberryNewcePlugin plugin, SocketAddress bindAddress) throws IOException {
+    public ServerListenerThread(RaspberryNewcePlugin plugin, int port) throws IOException {
         this.plugin = plugin;
-        this.bindAddress = bindAddress;
         serverSocket = new ServerSocket();
+        serverSocket.bind(new InetSocketAddress(port));
         serverSocket.setReuseAddress(true);
-        serverSocket.bind(bindAddress);
     }
 
+    @Override
     public void run() {
-        while (running) {
+        while (!this.isCancelled()) {
             try {
                 Socket newConnection = serverSocket.accept();
-                if (!running) return;
-
+                if (this.isCancelled()) return;
                 plugin.handleConnection(new RemoteSession(plugin, newConnection, 9000));
-            } catch (IOException e) {
-                // if the server thread is still running raise an error
-                if (running) {
-                    plugin.getLogger().warning("Error creating new connection");
-                    plugin.getLogger().info(e.getMessage());
-                }
+            } catch (SocketException ignored) {
+                // Socket closed
+                break;
+            }
+            catch (IOException e) {
+                plugin.getLogger().warning("Error creating new connection");
+                plugin.getLogger().info(e.getMessage());
             }
         }
+    }
+
+    public void close() {
         try {
-            serverSocket.close();
+            this.serverSocket.close();
         } catch (IOException e) {
             plugin.getLogger().warning("Error closing server socket");
             plugin.getLogger().info(e.getMessage());
