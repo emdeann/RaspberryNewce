@@ -6,7 +6,7 @@ import org.bukkit.Material;
 import org.bukkit.World;
 import org.emdeann.raspberryNewce.Commands.CommandParameterTypes;
 import org.emdeann.raspberryNewce.Commands.GameCommand;
-import org.emdeann.raspberryNewce.Commands.Processors.JSONStructure.ServerCommand;
+import org.emdeann.raspberryNewce.JSONStructure.ServerCommand;
 import org.emdeann.raspberryNewce.RaspberryNewcePlugin;
 import org.emdeann.raspberryNewce.RemoteSession;
 

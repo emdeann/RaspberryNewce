@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.MappingIterator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.bukkit.scheduler.BukkitRunnable;
-import org.emdeann.raspberryNewce.Commands.Processors.JSONStructure.ServerCommand;
+import org.emdeann.raspberryNewce.JSONStructure.ServerCommand;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;

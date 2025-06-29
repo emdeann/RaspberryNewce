@@ -6,7 +6,7 @@ import org.emdeann.raspberryNewce.Commands.CommandDomain;
 import org.emdeann.raspberryNewce.Commands.Processors.CommandProcessor;
 import org.emdeann.raspberryNewce.Commands.Processors.PlayerCommandProcessor;
 import org.emdeann.raspberryNewce.Commands.Processors.WorldCommandProcessor;
-import org.emdeann.raspberryNewce.Commands.Processors.JSONStructure.ServerCommand;
+import org.emdeann.raspberryNewce.JSONStructure.ServerCommand;
 
 import java.io.IOException;
 import java.util.Map;
