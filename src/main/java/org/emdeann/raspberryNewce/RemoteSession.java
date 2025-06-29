@@ -114,17 +114,6 @@ public class RemoteSession extends BukkitRunnable {
         this.cancel();
     }
 
-    public void kick(String reason) {
-        try {
-            out.write(reason);
-            out.flush();
-        } catch (IOException e) {
-            plugin.getLogger().warning("Error while kicking for " + reason);
-            plugin.getLogger().info(e.getMessage());
-        }
-        close();
-    }
-
     /** socket listening thread */
     private class InputThread implements Runnable {
         public void run() {
