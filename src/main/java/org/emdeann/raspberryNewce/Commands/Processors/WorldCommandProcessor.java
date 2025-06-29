@@ -10,11 +10,10 @@ import java.util.List;
 
 public class WorldCommandProcessor extends CommandProcessor {
 
-    private final World world;
+
 
     public WorldCommandProcessor(RaspberryNewcePlugin plugin) {
         super(plugin);
-        world = plugin.getServer().getWorlds().getFirst();
     }
 
     @GameCommand
@@ -64,5 +63,20 @@ public class WorldCommandProcessor extends CommandProcessor {
                 }
             }
         }
+    }
+
+    @GameCommand
+    public Material getBlock(List<String> params) {
+        if (!verifyParametersAre(params,
+                CommandParameterTypes.INTEGER,
+                CommandParameterTypes.INTEGER,
+                CommandParameterTypes.INTEGER)) {
+            return null;
+        }
+        return getBlock(Integer.parseInt(params.get(0)), Integer.parseInt(params.get(1)), Integer.parseInt(params.get(2)));
+    }
+
+    public Material getBlock(int x, int y, int z) {
+        return world.getBlockAt(x, y, z).getType();
     }
 }

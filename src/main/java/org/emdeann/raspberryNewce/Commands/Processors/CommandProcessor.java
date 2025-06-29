@@ -1,10 +1,14 @@
 package org.emdeann.raspberryNewce.Commands.Processors;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.bukkit.Material;
+import org.bukkit.World;
 import org.emdeann.raspberryNewce.Commands.CommandParameterTypes;
 import org.emdeann.raspberryNewce.Commands.GameCommand;
-import org.emdeann.raspberryNewce.Commands.ServerCommand;
+import org.emdeann.raspberryNewce.Commands.Processors.JSONStructure.ServerCommand;
 import org.emdeann.raspberryNewce.RaspberryNewcePlugin;
+import org.emdeann.raspberryNewce.RemoteSession;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -15,6 +19,8 @@ import java.util.Map;
 public class CommandProcessor {
     private final Map<String, Method> commands;
     protected RaspberryNewcePlugin plugin;
+    protected final World world;
+    private final ObjectMapper jsonMapper;
 
     public CommandProcessor(RaspberryNewcePlugin plugin) {
         this.plugin = plugin;
@@ -24,12 +30,15 @@ public class CommandProcessor {
                 commands.put(method.getName(), method);
             }
         }
+        this.world = plugin.getServer().getWorlds().getFirst();
+        jsonMapper = new ObjectMapper();
     }
 
-    public void runCommand(ServerCommand command) {
+    public void runCommand(ServerCommand command, RemoteSession session) {
         try {
-            commands.get(command.command).invoke(this, command.args);
-        } catch (IllegalAccessException | InvocationTargetException ignored) {
+            Object ret = commands.get(command.command).invoke(this, command.args);
+            session.send(jsonMapper.writeValueAsString(ret));
+        } catch (IllegalAccessException | InvocationTargetException | JsonProcessingException ignored) {
 
         }
     }

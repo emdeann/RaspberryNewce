@@ -1,4 +1,4 @@
-package org.emdeann.raspberryNewce.Commands;
+package org.emdeann.raspberryNewce.Commands.Processors.JSONStructure;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 

@@ -4,8 +4,9 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
 import org.emdeann.raspberryNewce.Commands.CommandDomain;
 import org.emdeann.raspberryNewce.Commands.Processors.CommandProcessor;
+import org.emdeann.raspberryNewce.Commands.Processors.PlayerCommandProcessor;
 import org.emdeann.raspberryNewce.Commands.Processors.WorldCommandProcessor;
-import org.emdeann.raspberryNewce.Commands.ServerCommand;
+import org.emdeann.raspberryNewce.Commands.Processors.JSONStructure.ServerCommand;
 
 import java.io.IOException;
 import java.util.Map;
@@ -26,7 +27,8 @@ public final class RaspberryNewcePlugin extends JavaPlugin {
             getLogger().severe("Failed to start ListenerThread!");
         }
         commandProcessors = Map.ofEntries(
-                Map.entry(CommandDomain.WORLD, new WorldCommandProcessor(this))
+                Map.entry(CommandDomain.WORLD, new WorldCommandProcessor(this)),
+                Map.entry(CommandDomain.PLAYER, new PlayerCommandProcessor(this))
         );
     }
 
@@ -40,7 +42,7 @@ public final class RaspberryNewcePlugin extends JavaPlugin {
         session.runTaskTimer(this, 0, 1);
     }
 
-    public void handleCommand(ServerCommand command) {
-        commandProcessors.get(CommandDomain.valueOf(command.domain.toUpperCase())).runCommand(command);
+    public void handleCommand(ServerCommand command, RemoteSession session) {
+        commandProcessors.get(CommandDomain.valueOf(command.domain.toUpperCase())).runCommand(command, session);
     }
 }
