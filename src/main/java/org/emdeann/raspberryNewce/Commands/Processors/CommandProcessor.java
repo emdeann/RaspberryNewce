@@ -15,9 +15,11 @@ import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
 
 public class CommandProcessor {
     private final Map<String, Method> commands;
+    private final Map<String, CommandParameterTypes[]> parameters;
     protected RaspberryNewcePlugin plugin;
     protected final World world;
     private final ObjectMapper jsonMapper;
@@ -25,9 +27,11 @@ public class CommandProcessor {
     public CommandProcessor(RaspberryNewcePlugin plugin) {
         this.plugin = plugin;
         commands = new HashMap<>();
+        parameters = new HashMap<>();
         for (Method method : this.getClass().getDeclaredMethods()) {
             if (method.isAnnotationPresent(GameCommand.class)) {
                 commands.put(method.getName(), method);
+                parameters.put(method.getName(), method.getAnnotation(GameCommand.class).paramList());
             }
         }
         this.world = plugin.getServer().getWorlds().getFirst();
@@ -36,36 +40,59 @@ public class CommandProcessor {
 
     public void runCommand(ServerCommand command, RemoteSession session) {
         try {
-            Object ret = commands.get(command.command).invoke(this, command.args);
-            session.send(jsonMapper.writeValueAsString(ret));
-        } catch (IllegalAccessException | InvocationTargetException | JsonProcessingException ignored) {
+            Method method = commands.get(command.command);
+            CommandParameterTypes[] expectedTypes = parameters.get(command.command);
+            if (method == null) {
+                plugin.getLogger().warning("Unknown command: " + command.command);
+                return;
+            }
 
+            Object[] parsedParams = validateAndParseParameters(command.args, expectedTypes);
+            if (parsedParams == null) {
+                plugin.getLogger().log(Level.WARNING, "Invalid parameters for command: " + command.command);
+                return;
+            }
+
+            Object ret = method.invoke(this, parsedParams);
+            if (ret != null) {
+                session.send(jsonMapper.writeValueAsString(ret));
+            }
+
+        } catch (IllegalAccessException | InvocationTargetException | JsonProcessingException e) {
+            plugin.getLogger().log(Level.SEVERE, "Error executing command: " + command.command, e);
         }
     }
 
-    protected boolean verifyParametersAre(List<String> params, CommandParameterTypes... types) {
+    protected Object[] validateAndParseParameters(List<String> params, CommandParameterTypes... types) {
         if (params.size() != types.length) {
-            return false;
+            return null;
         }
+
+        Object[] parsedParams = new Object[params.size()];
+
         for (int i = 0; i < params.size(); i++) {
             try {
                 switch (types[i]) {
-                    case INTEGER -> Integer.parseInt(params.get(i));
-                    case DOUBLE -> Double.parseDouble(params.get(i));
-                    case MATERIAL -> Material.valueOf(params.get(i).toUpperCase());
+                    case INTEGER -> parsedParams[i] = Integer.parseInt(params.get(i));
+                    case DOUBLE -> parsedParams[i] = Double.parseDouble(params.get(i));
+                    case MATERIAL -> parsedParams[i] = Material.valueOf(params.get(i).toUpperCase());
                     case BOOLEAN -> {
-                        if (!params.get(i).equalsIgnoreCase("true") && !params.get(i).equalsIgnoreCase("false"))
-                            return false;
+                        String boolStr = params.get(i).toLowerCase();
+                        if (!boolStr.equals("true") && !boolStr.equals("false")) {
+                            return null;
+                        }
+                        parsedParams[i] = Boolean.parseBoolean(boolStr);
                     }
-                    case STRING -> {}
+                    case STRING -> parsedParams[i] = params.get(i);
                     default -> {
-                        return false;
+                        return null;
                     }
                 }
             } catch (NumberFormatException e) {
-                return false;
+                return null;
             }
         }
-        return true;
+
+        return parsedParams;
     }
 }
