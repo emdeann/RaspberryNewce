@@ -21,7 +21,6 @@ public class CommandProcessor {
     private final Map<String, Method> commands;
     private final Map<String, CommandParameterTypes[]> parameters;
     protected RaspberryNewcePlugin plugin;
-    protected final World world;
     private final ObjectMapper jsonMapper;
 
     public CommandProcessor(RaspberryNewcePlugin plugin) {
@@ -34,7 +33,6 @@ public class CommandProcessor {
                 parameters.put(method.getName(), method.getAnnotation(GameCommand.class).paramList());
             }
         }
-        this.world = plugin.getServer().getWorlds().getFirst();
         jsonMapper = new ObjectMapper();
     }
 
@@ -84,11 +82,17 @@ public class CommandProcessor {
                         parsedParams[i] = Boolean.parseBoolean(boolStr);
                     }
                     case STRING -> parsedParams[i] = params.get(i);
+                    case PLAYER -> {
+                        parsedParams[i] = plugin.getServer().getPlayer(params.get(i));
+                        if (parsedParams[i] == null) {
+                            throw new NullPointerException("Player parameter was null");
+                        }
+                    }
                     default -> {
                         return null;
                     }
                 }
-            } catch (NumberFormatException e) {
+            } catch (NumberFormatException | NullPointerException e) {
                 return null;
             }
         }

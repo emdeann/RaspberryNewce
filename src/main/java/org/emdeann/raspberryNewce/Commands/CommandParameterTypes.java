@@ -5,5 +5,6 @@ public enum CommandParameterTypes {
     DOUBLE,
     BOOLEAN,
     STRING,
-    MATERIAL
+    MATERIAL,
+    PLAYER
 }
